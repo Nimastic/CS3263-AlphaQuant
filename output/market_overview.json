@@ -1,0 +1,30 @@
+{
+  "market_sentiment": {
+    "market_sentiment_score": 0.2,
+    "market_sentiment_label": "slightly positive",
+    "articles_count": 42,
+    "top_headlines": [
+      {
+        "title": "Markets Rally on Economic Data",
+        "sentiment": 0.8
+      },
+      {
+        "title": "Fed Signals Potential Rate Cuts",
+        "sentiment": 0.6
+      },
+      {
+        "title": "Inflation Concerns Weigh on Investors",
+        "sentiment": -0.4
+      },
+      {
+        "title": "Tech Stocks Lead Market Gains",
+        "sentiment": 0.5
+      },
+      {
+        "title": "Global Tensions Impact Trading",
+        "sentiment": -0.3
+      }
+    ]
+  },
+  "timestamp": "2025-04-14T06:05:43.638407"
+}

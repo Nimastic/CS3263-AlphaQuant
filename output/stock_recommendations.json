@@ -1,0 +1,112 @@
+{
+  "AAPL": {
+    "ticker": "AAPL",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 40.1",
+      "Caution: AAPL is experiencing higher than normal volatility"
+    ]
+  },
+  "MSFT": {
+    "ticker": "MSFT",
+    "recommendation": "hold",
+    "confidence": 0.6,
+    "reasons": [
+      "Price is above 20-day moving average",
+      "Short-term momentum is positive",
+      "RSI is neutral at 47.9",
+      "Caution: MSFT is experiencing higher than normal volatility"
+    ]
+  },
+  "GOOGL": {
+    "ticker": "GOOGL",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 41.3",
+      "Caution: GOOGL is experiencing higher than normal volatility"
+    ]
+  },
+  "AMZN": {
+    "ticker": "AMZN",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 40.0",
+      "Caution: AMZN is experiencing higher than normal volatility"
+    ]
+  },
+  "META": {
+    "ticker": "META",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 36.7",
+      "Caution: META is experiencing higher than normal volatility"
+    ]
+  },
+  "TSLA": {
+    "ticker": "TSLA",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 43.3",
+      "Caution: TSLA is experiencing higher than normal volatility"
+    ]
+  },
+  "JPM": {
+    "ticker": "JPM",
+    "recommendation": "hold",
+    "confidence": 0.6,
+    "reasons": [
+      "Price is above 20-day moving average",
+      "Short-term momentum is positive",
+      "RSI is neutral at 44.4",
+      "Caution: JPM is experiencing higher than normal volatility"
+    ]
+  },
+  "JNJ": {
+    "ticker": "JNJ",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 36.4",
+      "Caution: JNJ is experiencing higher than normal volatility"
+    ]
+  },
+  "PG": {
+    "ticker": "PG",
+    "recommendation": "hold",
+    "confidence": 0.6,
+    "reasons": [
+      "Price is above 20-day moving average",
+      "Short-term momentum is positive",
+      "RSI is neutral at 51.6",
+      "Caution: PG is experiencing higher than normal volatility"
+    ]
+  },
+  "V": {
+    "ticker": "V",
+    "recommendation": "sell",
+    "confidence": 0.7,
+    "reasons": [
+      "Price is below both 20-day and 50-day moving averages",
+      "20-day moving average is below 50-day moving average (bearish crossover)",
+      "RSI is neutral at 45.0",
+      "Caution: V is experiencing higher than normal volatility"
+    ]
+  }
+}
