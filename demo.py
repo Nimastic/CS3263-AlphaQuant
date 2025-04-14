@@ -523,6 +523,56 @@ class BayesianForecaster:
         return True
 
 
+def select_portfolio_based_on_recommendations(recommendations, tickers, min_confidence=0.6):
+    """Select portfolio tickers and weights based on stock recommendations.
+    
+    Args:
+        recommendations: Dictionary of stock recommendations
+        tickers: List of available tickers
+        min_confidence: Minimum confidence threshold
+        
+    Returns:
+        Tuple of (selected_tickers, weights)
+    """
+    selected_tickers = []
+    scores = []
+    
+    for ticker in tickers:
+        if ticker not in recommendations:
+            continue
+            
+        rec = recommendations[ticker]
+        
+        # Skip if confidence is too low
+        if rec['confidence'] < min_confidence:
+            continue
+            
+        # Calculate a score based on recommendation and confidence
+        score = 0
+        if rec['recommendation'] == 'buy':
+            score = rec['confidence'] * 2
+        elif rec['recommendation'] == 'hold':
+            score = rec['confidence']
+        elif rec['recommendation'] == 'sell':
+            continue  # Skip sell recommendations
+            
+        if score > 0:
+            selected_tickers.append(ticker)
+            scores.append(score)
+    
+    # If no stocks meet criteria, return default
+    if not selected_tickers:
+        logger.warning("No stocks met recommendation criteria, using default portfolio")
+        return ["AAPL", "MSFT", "GOOGL"], [1/3, 1/3, 1/3]
+    
+    # Calculate weights proportional to scores
+    total_score = sum(scores)
+    weights = [score/total_score for score in scores]
+    
+    logger.info(f"Selected portfolio based on recommendations: {list(zip(selected_tickers, weights))}")
+    return selected_tickers, weights
+
+
 def main():
     """Run the AlphaQuant Demo with real data."""
     logger.info("Starting AlphaQuant Demo (Real Data Version)")
@@ -640,9 +690,17 @@ def main():
     try:
         logger.info("Running portfolio simulation")
         
-        # Create a portfolio with real stocks
-        portfolio_tickers = ["AAPL", "MSFT", "GOOGL"]
-        weights = [1/3, 1/3, 1/3]  # Equal weights
+        # # Create a portfolio with real stocks
+        # portfolio_tickers = ["AAPL", "MSFT", "GOOGL"]
+        # weights = [1/3, 1/3, 1/3]  # Equal weights
+
+        # Select portfolio based on recommendations
+        portfolio_tickers, weights = select_portfolio_based_on_recommendations(
+            all_recommendations, tickers, min_confidence=0.6
+        )
+        
+        logger.info(f"Recommendation-based portfolio: {portfolio_tickers}")
+        logger.info(f"Portfolio weights: {[round(w, 2) for w in weights]}")
         
         # Calculate portfolio performance
         portfolio_values = []
