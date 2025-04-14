@@ -573,6 +573,170 @@ def select_portfolio_based_on_recommendations(recommendations, tickers, min_conf
     return selected_tickers, weights
 
 
+def run_portfolio_backtest(stock_data, tickers, lookback_period=120):
+    """Run a backtest comparing recommendation-based portfolio against equal-weight.
+    
+    Args:
+        stock_data: Dictionary of stock dataframes
+        tickers: List of available tickers
+        lookback_period: Number of days to use for backtest (default: 120 trading days)
+        
+    Returns:
+        Dictionary with backtest results
+    """
+    logger.info(f"Running portfolio backtest with {lookback_period} days lookback period")
+    
+    # Ensure we have enough data for all tickers
+    valid_tickers = []
+    for ticker in tickers:
+        if ticker in stock_data and not stock_data[ticker].empty:
+            if len(stock_data[ticker]) >= lookback_period:
+                valid_tickers.append(ticker)
+    
+    if len(valid_tickers) < 3:
+        logger.error("Not enough data for backtest")
+        return {"error": "Not enough data for backtest"}
+    
+    # Set up backtest parameters
+    test_periods = lookback_period // 20  # Rebalance every 20 trading days
+    benchmark_tickers = valid_tickers[:5]  # Take first 5 valid tickers for benchmark
+    
+    # Initialize results
+    rec_portfolio_values = []  # Recommendation-based portfolio
+    equal_portfolio_values = []  # Equal weight portfolio
+    dates = []
+    
+    # Get common dates for all valid tickers
+    common_dates = None
+    for ticker in valid_tickers:
+        if common_dates is None:
+            common_dates = set(stock_data[ticker].index[-lookback_period:])
+        else:
+            common_dates = common_dates.intersection(set(stock_data[ticker].index[-lookback_period:]))
+    
+    if not common_dates:
+        logger.error("No common dates found for backtest")
+        return {"error": "No common dates found for backtest"}
+    
+    common_dates = sorted(list(common_dates))
+    
+    # Run the backtest
+    test_start_indices = list(range(0, lookback_period, 20))
+    
+    # Initialize portfolio values
+    rec_value = 100.0
+    equal_value = 100.0
+    
+    for i, start_idx in enumerate(test_start_indices[:-1]):
+        period_dates = common_dates[start_idx:test_start_indices[i+1]]
+        period_start_date = period_dates[0]
+        
+        # Generate recommendations at the start of each period
+        all_recommendations = {}
+        
+        for ticker in valid_tickers:
+            # Use data up to the current period start date to generate recommendation
+            historical_data = stock_data[ticker]
+            historical_data = historical_data[historical_data.index <= period_start_date]
+            
+            if len(historical_data) >= 60:  # Need enough data for indicators
+                # Create a temporary DataManager to get recommendations
+                temp_manager = DataManager()
+                recommendation = temp_manager.generate_stock_recommendation(ticker, historical_data)
+                all_recommendations[ticker] = recommendation
+        
+        # Select portfolios
+        rec_tickers, rec_weights = select_portfolio_based_on_recommendations(
+            all_recommendations, valid_tickers, min_confidence=0.6
+        )
+        
+        equal_tickers = benchmark_tickers
+        equal_weights = [1.0/len(equal_tickers)] * len(equal_tickers)
+        
+        logger.info(f"Period {i+1}: Rec portfolio: {rec_tickers}")
+        
+        # Calculate returns for this period
+        rec_period_return = 0
+        equal_period_return = 0
+        
+        # Get starting and ending prices
+        for j, ticker in enumerate(rec_tickers):
+            ticker_data = stock_data[ticker]
+            start_price = ticker_data.loc[ticker_data.index == period_dates[0], 'Close'].iloc[0]
+            end_price = ticker_data.loc[ticker_data.index == period_dates[-1], 'Close'].iloc[0]
+            ticker_return = (end_price / start_price) - 1
+            rec_period_return += ticker_return * rec_weights[j]
+        
+        for j, ticker in enumerate(equal_tickers):
+            ticker_data = stock_data[ticker]
+            start_price = ticker_data.loc[ticker_data.index == period_dates[0], 'Close'].iloc[0]
+            end_price = ticker_data.loc[ticker_data.index == period_dates[-1], 'Close'].iloc[0]
+            ticker_return = (end_price / start_price) - 1
+            equal_period_return += ticker_return * equal_weights[j]
+        
+        # Update portfolio values
+        rec_value *= (1 + rec_period_return)
+        equal_value *= (1 + equal_period_return)
+        
+        # Track values at the end of each period
+        dates.append(period_dates[-1])
+        rec_portfolio_values.append(rec_value)
+        equal_portfolio_values.append(equal_value)
+        
+        logger.info(f"Period {i+1} returns: Recommended: {rec_period_return:.2%}, Equal-weight: {equal_period_return:.2%}")
+    
+    # Calculate performance metrics
+    rec_total_return = (rec_value / 100.0) - 1
+    equal_total_return = (equal_value / 100.0) - 1
+    
+    # Annualize returns (approximate)
+    days_in_test = (common_dates[-1] - common_dates[0]).days
+    years = max(days_in_test / 365, 0.1)  # Avoid division by very small numbers
+    
+    rec_annual_return = (1 + rec_total_return) ** (1 / years) - 1
+    equal_annual_return = (1 + equal_total_return) ** (1 / years) - 1
+    
+    results = {
+        "dates": [d.strftime('%Y-%m-%d') for d in dates],
+        "recommended_portfolio": {
+            "values": rec_portfolio_values,
+            "total_return": rec_total_return,
+            "annual_return": rec_annual_return
+        },
+        "equal_weight_portfolio": {
+            "values": equal_portfolio_values,
+            "total_return": equal_total_return,
+            "annual_return": equal_annual_return
+        },
+        "benchmark_tickers": benchmark_tickers,
+        "test_periods": test_periods,
+        "days_in_test": days_in_test
+    }
+    
+    # Plot backtest results
+    plt.figure(figsize=(12, 6))
+    plt.plot(dates, rec_portfolio_values, label=f'Recommendation-Based Portfolio (Return: {rec_total_return:.2%})', linewidth=2)
+    plt.plot(dates, equal_portfolio_values, label=f'Equal-Weight Portfolio (Return: {equal_total_return:.2%})', linewidth=2, linestyle='--')
+    
+    plt.title('Portfolio Backtest Comparison')
+    plt.xlabel('Date')
+    plt.ylabel('Portfolio Value')
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig("output/portfolio_backtest.png")
+    plt.close()
+    
+    logger.info(f"Backtest results: Recommendation-based return: {rec_total_return:.2%}, Equal-weight return: {equal_total_return:.2%}")
+    
+    # Save backtest results to JSON
+    with open("output/backtest_results.json", "w") as f:
+        json.dump(results, f, indent=2)
+    
+    return results
+
+
 def main():
     """Run the AlphaQuant Demo with real data."""
     logger.info("Starting AlphaQuant Demo (Real Data Version)")
@@ -685,6 +849,29 @@ def main():
         logger.info("Saved stock recommendations to output/stock_recommendations.json")
     except Exception as e:
         logger.error(f"Error generating recommendations: {e}")
+
+    # 5.5. Run portfolio backtest
+    try:
+        logger.info("Running portfolio backtest comparison")
+        backtest_results = run_portfolio_backtest(stock_data, tickers, lookback_period=120)
+        
+        if "error" not in backtest_results:
+            recommended_return = backtest_results["recommended_portfolio"]["total_return"]
+            equal_return = backtest_results["equal_weight_portfolio"]["total_return"]
+            
+            logger.info(f"Backtest completed. Recommendation-based vs Equal-weight: {recommended_return:.2%} vs {equal_return:.2%}")
+            
+            # Calculate outperformance
+            outperformance = recommended_return - equal_return
+            if outperformance > 0:
+                logger.info(f"Recommendation strategy outperformed by {outperformance:.2%}")
+            else:
+                logger.info(f"Equal-weight strategy outperformed by {-outperformance:.2%}")
+                
+        else:
+            logger.error(f"Backtest error: {backtest_results['error']}")
+    except Exception as e:
+        logger.error(f"Error in portfolio backtest: {e}")
     
     # 6. Portfolio simulation
     try:
